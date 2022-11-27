@@ -16,6 +16,7 @@ const manager = getManager();
 export class OrderController {
   async insertFiles(request: Request, response: Response) {
     try {
+      console.log('entrou insertFiles');
       const id = uuidv4();
       const body = request.body;
 
@@ -51,15 +52,18 @@ export class OrderController {
         .createQueryBuilder()
         .select("*")
         .from("public.dns", "dns")
-        .where(`id = '${id}'`)
+        .where(`id = '${id}.${extension}'`)
         .getRawOne();
 
       // chama o broker: subscriptiion na fila (id do arquivo) e publish no tópico (categoria)
       await axios({
         method: "post",
-        url: "localhost:5000/newFile",
+        url: "http://127.0.0.1:5000/newFile",
+        headers: {
+          'Content-type': "application/json"
+        },
         data: {
-          fileId: id,
+          fileId: `${id}.${extension}`,
           fileName: body.fileName,
           category: body.category,
         },
@@ -80,6 +84,7 @@ export class OrderController {
 
   async insertFileInDNS(request: Request, response: Response) {
     try {
+      console.log('entrou insertFileInDNS');
       const body = request.body;
 
       const old = await manager
@@ -89,7 +94,7 @@ export class OrderController {
         .where(`id = '${body.fileId}'`)
         .getRawOne();
 
-      if (old && old.id) {
+      if (!old || old === null) {
         await manager
           .createQueryBuilder()
           .insert()
@@ -124,11 +129,12 @@ export class OrderController {
 
   async notifyRequest(request: Request, response: Response) {
     try {
+      console.log('entrou notifyRequest');
       const body = request.body;
 
       await axios({
         method: "post",
-        url: "localhost:5000/requestFile",
+        url: "http://127.0.0.1:5000/requestFile",
         data: {
           fileId: body.fileId,
           ip: process.env.PUBLIC_IP,
@@ -155,6 +161,7 @@ export class OrderController {
 
   async downloadFile(request: Request, response: Response) {
     try {
+      console.log('entrou downloadFile');
       const body = request.body;
 
       fs.writeFile(
@@ -165,10 +172,14 @@ export class OrderController {
           if (err) {
             response.status(400).send(err);
           } else {
+
+            await manager.createQueryBuilder().update('dns').set({
+              path: body.path
+            }).where(`id = '${body.fileId}'`).execute()
             // chama o broker: subscriptiion na fila (id do arquivo) e publish no tópico (categoria)
             await axios({
               method: "post",
-              url: "localhost:5000/newFile",
+              url: "http://127.0.0.1:5000/newFile",
               data: {
                 fileId: body.fileId,
                 fileName: body.fileName,
@@ -196,6 +207,7 @@ export class OrderController {
 
   async transferFile(request: Request, response: Response) {
     try {
+      console.log('entrou transferFile');
       const body = request.body;
 
       const file = await manager
@@ -207,12 +219,12 @@ export class OrderController {
 
       await axios({
         method: "post",
-        url: `${body.ip}:${body.port}/downloadFile`,
+        url: `http://${body.ip}:${body.port}/downloadFile`,
         data: {
           fileId: body.fileId,
-          path: file.dns,
+          path: file.path,
           category: file.category,
-          fileName: file.fileName
+          fileName: file.filename
         },
       }).catch((error) => {
         response.status(400).send({
