@@ -4,7 +4,7 @@ import requests
 from flask import Flask, request
 
 app = Flask(__name__)
-backendUrl = 'http://localhost:5000'
+backendUrl = 'http://localhost:3000'
 
 def tryConnect(conn, idInicial):
     try:
