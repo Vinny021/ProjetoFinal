@@ -31,7 +31,8 @@ class BranchListener(stomp.ConnectionListener):
         
         if(body['messageType'] == 'notification'):
             data = {"fileId": body["fileId"], "fileName": body["fileName"], "category": body["category"]}
-            body = json.dumps(data)
+            bodyString = json.dumps(data)
+            body = json.loads(bodyString)
 
             req = requests.post(backendUrl+'/insertFileInDNS', json=body)
             print("Chamada Backend para criar registro")
@@ -39,15 +40,16 @@ class BranchListener(stomp.ConnectionListener):
             
             destination = '{backendUrl}/transferFile'.format(backendUrl=backendUrl)
             
-            bodyData = {"fileId": body['fileId'], "ip": body["ip"], "port": body["port"]} 
-            body = json.dumps(bodyData)
+            data = {"fileId": body['fileId'], "ip": body["ip"], "port": body["port"]} 
+            bodyString = json.dumps(data)
+            body = json.loads(bodyString)
 
             req = requests.post(destination, json=body)
             print("Chamada ao Backend de quem possui para ser feita a transferência")
             
 
 
-ActiveMQIP = '127.0.0.1'
+ActiveMQIP = '200.235.87.135'
 PORT = 61613
 
 conn = stomp.Connection([(ActiveMQIP, PORT)])
@@ -69,7 +71,9 @@ conn.subscribe(topicString, id=idTopic)
 
 @app.route('/newFile', methods=['GET', 'POST']) 
 def notifyNewFile():
-    body = request.form 
+    bytesBody = request.data 
+    bodyString = bytesBody.decode("utf-8")
+    body = json.loads(bodyString)
     
     data = {"messageType": "notification", "fileId": body["fileId"], "fileName": body["fileName"], "category": body["category"]}
     sendData = json.dumps(data)
@@ -84,8 +88,10 @@ def notifyNewFile():
 
 @app.route('/requestFile', methods=['GET', 'POST']) 
 def requestFile():
-    body = request.form 
-    
+    bytesBody = request.data 
+    bodyString = bytesBody.decode("utf-8")
+    body = json.loads(bodyString)
+
     data = {"messageType": "request", "fileId": body["fileId"], "ip": body["ip"], "port": body["port"]}
     sendData = json.dumps(data)
 
@@ -93,9 +99,7 @@ def requestFile():
 
     conn.send(body=''.join(sendData), destination=queueString)
 
-    conn.send(body=''.join(sendData), destination='/topic/' + body["category"])
-
-    return 200 
+    return {200: 'OK'} 
 
 @app.route('/deleteFile', methods=['GET', 'POST']) 
 def delteFile():
