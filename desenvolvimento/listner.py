@@ -37,7 +37,7 @@ class BranchListener(stomp.ConnectionListener):
             print("Chamada Backend para criar registro")
         elif(body['messageType'] == 'request'):
             
-            destination = '{backendUrl}/request'.format(backendUrl=backendUrl)
+            destination = '{backendUrl}/transferFile'.format(backendUrl=backendUrl)
             
             bodyData = {"fileId": body['fileId'], "ip": body["ip"], "port": body["port"]} 
             body = json.dumps(bodyData)
