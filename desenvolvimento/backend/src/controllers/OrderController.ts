@@ -25,8 +25,6 @@ export class OrderController {
 
       base64Data = body.file.split(`base64,`)[1];
 
-      // console.log('base aqui', base64Data);
-
       fs.writeFile(
         `D:\\com242\\media\\${id}.${extension}`,
         base64Data,
@@ -66,14 +64,29 @@ export class OrderController {
           fileId: `${id}.${extension}`,
           fileName: body.fileName,
           category: body.category,
-        },
+        }
       }).catch((error) => {
-        response.status(400).send({
-          message: error,
-        });
+        console.log(error);
       });
 
       response.status(200).send(result);
+    } catch (error) {
+      return response.status(400).send({
+        error: "Houve um erro na aplicação",
+        message: error,
+      });
+    }
+  }
+
+  async getFilesAvailable(request: Request, response: Response) {
+    try {
+      const files = await manager
+        .createQueryBuilder()
+        .select()
+        .from("dns", "dns")
+        .getRawMany();
+
+      response.status(200).send(files);
     } catch (error) {
       return response.status(400).send({
         error: "Houve um erro na aplicação",
@@ -230,6 +243,10 @@ export class OrderController {
         response.status(400).send({
           message: error,
         });
+      });
+
+      response.status(200).send({
+        message: "ok",
       });
     } catch (error) {
       return response.status(400).send({

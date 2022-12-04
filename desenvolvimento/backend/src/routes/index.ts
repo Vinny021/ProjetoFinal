@@ -9,12 +9,16 @@ const manager = getManager();
 
 const routes = Router();
 
+// rota para listar todos os arquivos disponíveis para o usuario
+// origin: front-end
+routes.route("/getFilesAvailable").get(new OrderController().getFilesAvailable);
+
 // quando irá inserir o arquivo pela primeira vez
-// origem: front-end
+// origin: front-end
 routes.route("/insertFiles").post(new OrderController().insertFiles);
 
 // quando chegar aviso de inserção no tópico de categorias, inserir no dns dos inscritos para falar que o arquivo existe
-// origem: broker
+// origin: broker
 routes.route("/insertFileInDNS").post(new OrderController().insertFileInDNS);
 
 // primeira rota de download, backend manda porta, id e ip do file para o broker
