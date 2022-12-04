@@ -244,6 +244,10 @@ export class OrderController {
           message: error,
         });
       });
+
+      response.status(200).send({
+        message: "ok",
+      });
     } catch (error) {
       return response.status(400).send({
         error: "Houve um erro na aplicação",
