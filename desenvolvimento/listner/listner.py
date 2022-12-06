@@ -49,7 +49,7 @@ class BranchListener(stomp.ConnectionListener):
             
 
 
-ActiveMQIP = '127.0.0.1'
+ActiveMQIP = '200.235.87.135'
 PORT = 61613
 
 conn = stomp.Connection([(ActiveMQIP, PORT)])
@@ -71,7 +71,9 @@ conn.subscribe(topicString, id=idTopic)
 
 @app.route('/newFile', methods=['GET', 'POST']) 
 def notifyNewFile():
-    print('entrou') 
+    bytesBody = request.data 
+    bodyString = bytesBody.decode("utf-8")
+    body = json.loads(bodyString)
     
     bytesBody = request.data 
 
@@ -101,11 +103,9 @@ def notifyNewFile():
 @app.route('/requestFile', methods=['GET', 'POST']) 
 def requestFile():
     bytesBody = request.data 
-
     bodyString = bytesBody.decode("utf-8")
+    body = json.loads(bodyString)
 
-    body = json.loads(bodyString) 
-    
     data = {"messageType": "request", "fileId": body["fileId"], "ip": body["ip"], "port": body["port"]}
     sendData = json.dumps(data)
 
@@ -113,7 +113,7 @@ def requestFile():
 
     conn.send(body=''.join(sendData), destination=queueString)
 
-    return {200: 'OK'}
+    return {200: 'OK'} 
 
 @app.route('/deleteFile', methods=['GET', 'POST']) 
 def delteFile():
