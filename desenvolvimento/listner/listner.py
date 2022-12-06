@@ -30,8 +30,9 @@ class BranchListener(stomp.ConnectionListener):
         print('\nReceived a message "%s"' % body)
         
         if(body['messageType'] == 'notification'):
-            data = {"fileId": body["fileId"], "fileName": body["fileName"], "category": body["category"]}
-            body = json.dumps(data)
+            data = {"fileId": body["fileId"], "fileName": body["fileName"], "category": body["category"], "extension": body["extension"]}
+            bodyString = json.dumps(data)
+            body = json.loads(bodyString)
 
             req = requests.post(backendUrl+'/insertFileInDNS', json=body)
             print("Chamada Backend para criar registro")
@@ -39,8 +40,9 @@ class BranchListener(stomp.ConnectionListener):
             
             destination = '{backendUrl}/transferFile'.format(backendUrl=backendUrl)
             
-            bodyData = {"fileId": body['fileId'], "ip": body["ip"], "port": body["port"]} 
-            body = json.dumps(bodyData)
+            data = {"fileId": body['fileId'], "ip": body["ip"], "port": body["port"]} 
+            bodyString = json.dumps(data)
+            body = json.loads(bodyString)
 
             req = requests.post(destination, json=body)
             print("Chamada ao Backend de quem possui para ser feita a transferência")
@@ -69,9 +71,23 @@ conn.subscribe(topicString, id=idTopic)
 
 @app.route('/newFile', methods=['GET', 'POST']) 
 def notifyNewFile():
-    body = request.form 
+    print('entrou') 
     
-    data = {"messageType": "notification", "fileId": body["fileId"], "fileName": body["fileName"], "category": body["category"]}
+    bytesBody = request.data 
+
+    bodyString = bytesBody.decode("utf-8")
+
+    body = json.loads(bodyString)
+    print(body)
+
+
+    data = {
+        "messageType": "notification", 
+        "fileId": body["fileId"], 
+        "fileName": body["fileName"], 
+        "category": body["category"], 
+        "extension": body["extension"]
+    }
     sendData = json.dumps(data)
 
     queueString = '/queue/' + data['fileId']
@@ -84,7 +100,11 @@ def notifyNewFile():
 
 @app.route('/requestFile', methods=['GET', 'POST']) 
 def requestFile():
-    body = request.form 
+    bytesBody = request.data 
+
+    bodyString = bytesBody.decode("utf-8")
+
+    body = json.loads(bodyString) 
     
     data = {"messageType": "request", "fileId": body["fileId"], "ip": body["ip"], "port": body["port"]}
     sendData = json.dumps(data)
@@ -93,9 +113,7 @@ def requestFile():
 
     conn.send(body=''.join(sendData), destination=queueString)
 
-    conn.send(body=''.join(sendData), destination='/topic/' + body["category"])
-
-    return 200 
+    return {200: 'OK'}
 
 @app.route('/deleteFile', methods=['GET', 'POST']) 
 def delteFile():
