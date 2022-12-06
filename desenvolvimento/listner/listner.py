@@ -30,7 +30,7 @@ class BranchListener(stomp.ConnectionListener):
         print('\nReceived a message "%s"' % body)
         
         if(body['messageType'] == 'notification'):
-            data = {"fileId": body["fileId"], "fileName": body["fileName"], "category": body["category"]}
+            data = {"fileId": body["fileId"], "fileName": body["fileName"], "category": body["category"], "extension": body["extension"]}
             bodyString = json.dumps(data)
             body = json.loads(bodyString)
 
@@ -75,7 +75,21 @@ def notifyNewFile():
     bodyString = bytesBody.decode("utf-8")
     body = json.loads(bodyString)
     
-    data = {"messageType": "notification", "fileId": body["fileId"], "fileName": body["fileName"], "category": body["category"]}
+    bytesBody = request.data 
+
+    bodyString = bytesBody.decode("utf-8")
+
+    body = json.loads(bodyString)
+    print(body)
+
+
+    data = {
+        "messageType": "notification", 
+        "fileId": body["fileId"], 
+        "fileName": body["fileName"], 
+        "category": body["category"], 
+        "extension": body["extension"]
+    }
     sendData = json.dumps(data)
 
     queueString = '/queue/' + data['fileId']
