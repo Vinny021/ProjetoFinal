@@ -17,162 +17,132 @@ import {
   useToast,
   Spinner,
 } from "@chakra-ui/react";
-
 export interface Order {
   name: any;
   file: any;
 }
-
 function Order() {
   const [order, setOrder] = useState<Order[]>([{ name: "", file: "" }]);
   const [categoria, setCategoria] = useState<string>("");
   const [fileCount, setFileCount] = useState<number>(1);
   const [isWaiting, setIsWaiting] = useState(false);
+
   const toast = useToast();
   let unique_id = "";
 
-  const insertFiles = (i: number) => {
-    order.map((od: Order, z: any) => {
+  const finished = (isError: boolean, indice: number) => {
+    setCategoria('');
+    setOrder([{ name: "", file: "" }]);
+    if(isError){
+      toast({
+        title: "Erro desconhecido",
+        description: "Verifique as informações e tente novamente",
+        status: "error",
+        duration: 2000,
+        isClosable: true,
+      });
+    }else{
+      toast({
+        title:
+          "Upload" +
+          (indice + 1) +
+          "/" +
+          order.length +
+          " feito com sucesso.",
+        description: "Upload feita com sucesso.",
+        status: "success",
+        duration: 1000,
+        isClosable: true,
+      });
+    }
+  }
+
+  const handleSubmit = (event: FormEvent) => {
+    setIsWaiting(true);
+    event.preventDefault();
+    order.map((od: Order, indice: any) => {
+      let isError = false;
       unique_id = uuid();
-      if (Math.trunc(od.file.length / 1000) < 1) {
-        if (i === 1) {
-          axios
-            .post("http://localhost:3000/insertFiles", {
-              fileId: unique_id,
-              category: categoria,
-              fileName: od.name,
-              file: od.file.substr(
-                Math.trunc(od.file.length / 2),
-                od.file.length - 1
-              ),
-              packageNumber: 0,
-            })
-            .then(() => {
-              toast({
-                title:
-                  "Upload" +
-                  (z + 1) +
-                  "/" +
-                  order.length +
-                  " feito com sucesso.",
-                description: "Upload feita com sucesso.",
-                status: "success",
-                duration: 1000,
-                isClosable: true,
+      if (Math.trunc(od.file.length / 10000) < 1) {
+        for (let i = 0; i <= 1; i++) {
+          if (i === 1) {
+            axios
+              .post("http://localhost:3000/insertFiles", {
+                fileId: unique_id,
+                category: categoria,
+                fileName: od.name,
+                file: od.file.substr(
+                  Math.trunc(od.file.length / 2),
+                  od.file.length - 1
+                ),
+                packageNumber: 0,
+              })
+              .then(() => {
+                finished(isError, indice);
+                setIsWaiting(false);
+              })
+              .catch(() => {
+                finished(isError, indice);
+                setIsWaiting(false);
               });
-              setIsWaiting(false);
-            })
-            .catch(() => {
-              toast({
-                title: "Erro desconhecido",
-                description: "Verifique as informações e tente novamente",
-                status: "error",
-                duration: 2000,
-                isClosable: true,
+          } else {
+            axios
+              .post("http://localhost:3000/insertFiles", {
+                fileId: unique_id,
+                category: categoria,
+                fileName: od.name,
+                file: od.file.substr(0, Math.trunc(od.file.length / 2)),
+                packageNumber: i + 1,
+              })
+              .catch(() => {
+                isError = true;
               });
-              setIsWaiting(false);
-            });
-        } else {
-          axios
-            .post("http://localhost:3000/insertFiles", {
-              fileId: unique_id,
-              category: categoria,
-              fileName: od.name,
-              file: od.file.substr(0, Math.trunc(od.file.length / 2)),
-              packageNumber: i + 1,
-            })
-            .then(() => {
-              insertFiles(i + 1);
-            })
-            .catch(() => {
-              toast({
-                title: "Erro desconhecido",
-                description: "Verifique as informações e tente novamente",
-                status: "error",
-                duration: 2000,
-                isClosable: true,
-              });
-              setIsWaiting(false);
-            });
+          }
         }
       } else {
-        if (i === Math.trunc(od.file.length / 1000)) {
-          axios
-            .post("http://localhost:3000/insertFiles", {
-              fileId: unique_id,
-              category: categoria,
-              fileName: od.name,
-              file: od.file.substr(i * 1000, (i + 1) * 1000 - 1),
-              packageNumber: 0,
-            })
-            .then(() => {
-              toast({
-                title:
-                  "Upload" +
-                  (z + 1) +
-                  "/" +
-                  order.length +
-                  " feito com sucesso.",
-                description: "Upload feita com sucesso.",
-                status: "success",
-                duration: 1000,
-                isClosable: true,
+        for (let i = 0; i <= Math.trunc(od.file.length / 10000); i++) {
+          if (i === Math.trunc(od.file.length / 10000)) {
+            axios
+              .post("http://localhost:3000/insertFiles", {
+                fileId: unique_id,
+                category: categoria,
+                fileName: od.name,
+                file: od.file.substr(i * 10000, (i + 1) * 10000 - 1),
+                packageNumber: 0,
+              })
+              .then(() => {
+                finished(isError, indice);
+                setIsWaiting(false);
+              })
+              .catch(() => {
+                finished(isError, indice);
+                setIsWaiting(false);
               });
-              setIsWaiting(false);
-            })
-            .catch(() => {
-              toast({
-                title: "Erro desconhecido",
-                description: "Verifique as informações e tente novamente",
-                status: "error",
-                duration: 2000,
-                isClosable: true,
+          } else {
+            axios
+              .post("http://localhost:3000/insertFiles", {
+                fileId: unique_id,
+                category: categoria,
+                fileName: od.name,
+                file: od.file.substr(i * 10000, (i + 1) * 10000),
+                packageNumber: i + 1,
+              })
+              .catch(() => {
+                isError = true;
               });
-              setIsWaiting(false);
-            });
-        } else {
-          axios
-            .post("http://localhost:3000/insertFiles", {
-              fileId: unique_id,
-              category: categoria,
-              fileName: od.name,
-              file: od.file.substr(i * 1000, (i + 1) * 1000),
-              packageNumber: i + 1,
-            })
-            .then(() => {
-              insertFiles(i + 1);
-            })
-            .catch(() => {
-              toast({
-                title: "Erro desconhecido",
-                description: "Verifique as informações e tente novamente",
-                status: "error",
-                duration: 2000,
-                isClosable: true,
-              });
-              setIsWaiting(false);
-            });
+          }
         }
       }
     });
   };
-
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    setIsWaiting(true);
-    insertFiles(0);
-  };
-
   const AddFile = () => {
     setFileCount(fileCount + 1);
     setOrder([...order, { name: "", file: "" }]);
   };
-
   const DeleteFile = (i: number) => {
     setFileCount(fileCount - 1);
     setOrder(order.filter((od: Order, z: number) => z !== i));
   };
-
   const saveInputName = (i: any, value: any) => {
     setOrder(
       order.map((od: Order, z: any) => {
@@ -183,7 +153,6 @@ function Order() {
       })
     );
   };
-
   function getBase64(file: any, cb: (result: any) => void) {
     let reader = new FileReader();
     reader.readAsDataURL(file);
@@ -191,7 +160,6 @@ function Order() {
       cb(reader.result);
     };
   }
-
   const saveInputFile = (i: any, value: any) => {
     getBase64(value[0], (result) => {
       setOrder(
@@ -204,7 +172,6 @@ function Order() {
       );
     });
   };
-
   return (
     <>
       <form onSubmit={handleSubmit} autoComplete="nope">
@@ -305,7 +272,7 @@ function Order() {
               })}
             </SimpleGrid>
             <Button colorScheme="green" mr={3} type="submit" value="submit">
-                {isWaiting ? <Spinner color='white.500' /> : <div> Salvar</div>}
+               {isWaiting ? <Spinner color='white.500' /> : <div> Salvar</div>}
             </Button>
             <Button colorScheme="red">Cancelar</Button>
           </Box>
