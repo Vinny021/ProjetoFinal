@@ -23,7 +23,7 @@ export class OrderController {
       // code: 1 -> primeiro pacote
       // demais: -> pacotes intermediários
       console.log(`package numero: ${body.packageNumber}\n`);
-      console.log(body);
+      // console.log(body);
       if (body.packageNumber == 1) {
         const extension = body.file.split(";")[0].split("/")[1];
         const base64Data = body.file.split(`base64,`)[1];
@@ -55,18 +55,20 @@ export class OrderController {
           .set({
             path: newFile,
           })
+          .where(`id = '${body.fileId}'`)
           .execute();
 
         response.status(200).send();
       } else {
-        console.log('\n\nENTROU 0\n\n');
+        console.log(`fileID = ${body.fileId}`);
         const dns = await manager
           .createQueryBuilder()
           .select("path, extension")
           .from("dns", "dns")
           .where(`id = '${body.fileId}'`)
           .getRawOne();
-        console.log(`\n\n${dns}\n\n`);
+        
+          console.log(`DNS = ${dns}`);
         const newFile = dns.path + body.file;
         await manager
           .createQueryBuilder()
@@ -74,6 +76,7 @@ export class OrderController {
           .set({
             path: newFile,
           })
+          .where(`id = '${body.fileId}'`)
           .execute();
 
         fs.writeFile(
@@ -112,7 +115,8 @@ export class OrderController {
         response.status(200).send();
       }
     } catch (error) {
-      return response.status(400).send({
+      console.log(error);
+      response.status(400).send({
         error: "Houve um erro na aplicação",
         message: error,
       });
@@ -129,7 +133,8 @@ export class OrderController {
 
       response.status(200).send(files);
     } catch (error) {
-      return response.status(400).send({
+      console.log(error);
+      response.status(400).send({
         error: "Houve um erro na aplicação",
         message: error,
       });
@@ -143,12 +148,14 @@ export class OrderController {
 
       const old = await manager
         .createQueryBuilder()
-        .select("id")
+        .select("id, extension")
         .from("dns", "dns")
         .where(`id = '${body.fileId}'`)
         .getRawOne();
 
-      if (!old || old === null) {
+        console.log(`OLD = ${JSON.stringify(old)}`);
+
+      if (!old || old === null || old === undefined) {
         await manager
           .createQueryBuilder()
           .insert()
@@ -157,7 +164,7 @@ export class OrderController {
             id: body.fileId,
             filename: body.fileName,
             category: body.category,
-            extension: body.extension
+            extension: old.extension
           })
           .execute();
 
@@ -170,12 +177,14 @@ export class OrderController {
 
         response.status(200).send(result);
       } else {
+        console.log('ARQUIVO JÁ EXISTE');
         response.status(400).send({
           message: "Arquivo já existente",
         });
       }
     } catch (error) {
-      return response.status(400).send({
+      console.log(error);
+      response.status(400).send({
         error: "Houve um erro na aplicação",
         message: error,
       });
@@ -202,12 +211,13 @@ export class OrderController {
           });
         })
         .catch((error) => {
-          response.status(400).send({
-            message: error,
-          });
+          console.log(error);
+          // response.status(400).send({
+          //   message: error,
+          // });
         });
     } catch (error) {
-      return response.status(400).send({
+      response.status(400).send({
         error: "Houve um erro na aplicação",
         message: error,
       });
@@ -248,9 +258,10 @@ export class OrderController {
                 extension: body.extension,
               },
             }).catch((error) => {
-              response.status(400).send({
-                message: error,
-              });
+              console.log(error)
+              // response.status(400).send({
+              //   message: error,
+              // });
             });
 
             response.status(200).send({
@@ -260,7 +271,7 @@ export class OrderController {
         }
       );
     } catch (error) {
-      return response.status(400).send({
+      response.status(400).send({
         error: "Houve um erro na aplicação",
         message: error,
       });
@@ -292,16 +303,17 @@ export class OrderController {
           extension: file.extension,
         },
       }).catch((error) => {
-        response.status(400).send({
-          message: error,
-        });
+        console.log(error)
+        // response.status(400).send({
+        //   message: error,
+        // });
       });
 
       response.status(200).send({
         message: "ok",
       });
     } catch (error) {
-      return response.status(400).send({
+      response.status(400).send({
         error: "Houve um erro na aplicação",
         message: error,
       });
